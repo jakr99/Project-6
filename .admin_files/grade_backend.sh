@@ -683,11 +683,12 @@ if [ "$enable_memory_tests" = true ]; then
     exit 1
   fi
 
+  has_valgreen=true
   if ! command -v valgreen &>/dev/null; then
-    echo Install valgreen before proceeding.
-    echo For Ubuntu/Debian:
-    echo "sudo apt install python3-pip ; pip3 install valgreen --user"
-    exit 1
+    echo Install valgreen to receive cleaner feedback.
+    echo For Debian:
+    echo "sudo apt install pipx ; pipx ensurepath ; pipx install valgreen"
+    has_valgreen=false
   fi
 
 
@@ -719,15 +720,21 @@ if [ "$enable_memory_tests" = true ]; then
       filename="$(basename $testpath)"
       testname="$(basename $testpath .cpp)"
       #echo Running command:
-      timeout "$process_timeout" valgrind --leak-check=full --track-origins=yes --show-reachable=yes --error-exitcode=1 ./mem_tests/build/"$testname" >/dev/null 2>&1
+      timeout "$process_timeout" valgrind --leak-check=full --track-origins=yes --show-reachable=yes --error-exitcode=1 ./mem_tests/build/"$testname" >valgrind.out 2>valgrind.err
       if [ $? -eq 0 ]; then
             grade_update "$filename" 100 0
       else
             grade_update "$filename" 0 0
-            valgreen ./mem_tests/build/"$testname"
+            if [ $has_valgreen = true ]; then
+                valgreen ./mem_tests/build/"$testname"
+            else
+		cat valgrind.out
+		cat valgrind.err
+	    fi
       fi
     done
     rm -rf mem_tests/build #clean up
+    rm valgrind.out valgrind.err
   else
     echo "Memory tests only supported for C++"
   fi
