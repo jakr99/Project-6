@@ -1,49 +1,128 @@
+#include <iostream>
 
-
-/// See MyMap.h for description ///
 void get_letter_frequency(MyMap<char, int> &in_tree) {
+  char ch;
+  while (std::cin.get(ch)) {
+    if (ch != '\n') {
+      in_tree[ch]++;
+    }
+  }
 }
-/// Tested by stdio_tests ///
 
 template <typename K, typename V>
 void MyMap<K, V>::clear_helper(TreeNode<K, V> *&rt) {
+  if (rt != nullptr) {
+    clear_helper(rt->left);
+    clear_helper(rt->right);
+    delete rt;
+    rt = nullptr;
+  }
 }
 
 template <typename K, typename V>
 void MyMap<K, V>::insert_helper(TreeNode<K, V> *&rt, const K &new_key,
                                 const V &new_value) {
+  if (rt == nullptr) {
+    rt = new TreeNode<K, V>(new_key, new_value);
+  } else if (new_key < rt->key) {
+    insert_helper(rt->left, new_key, new_value);
+  } else if (new_key > rt->key) {
+    insert_helper(rt->right, new_key, new_value);
+  } else {
+  }
 }
 
 template <typename K, typename V>
 TreeNode<K, V> *MyMap<K, V>::get_min(TreeNode<K, V> *rt) {
+  if (rt == nullptr) {
+    return nullptr;
+  }
+
+  while (rt->left != nullptr) {
+    rt = rt->left;
+  }
+
+  return rt;
 }
 
 template <typename K, typename V>
 void MyMap<K, V>::erase_helper(TreeNode<K, V> *&rt, const K &erase_key) {
+  if (rt == nullptr) {
+    return;
+  }
+
+  if (erase_key < rt->key) {
+    erase_helper(rt->left, erase_key);
+  } else if (erase_key > rt->key) {
+    erase_helper(rt->right, erase_key);
+  } else {
+    if (rt->left == nullptr) {
+      TreeNode<K, V> *temp = rt->right;
+      delete rt;
+      rt = temp;
+    } else if (rt->right == nullptr) {
+      TreeNode<K, V> *temp = rt->left;
+      delete rt;
+      rt = temp;
+    } else {
+      TreeNode<K, V> *min_node = get_min(rt->right);
+      rt->key = min_node->key;
+      rt->value = min_node->value;
+      erase_helper(rt->right, min_node->key);
+    }
+  }
 }
 
 template <typename K, typename V>
 V &MyMap<K, V>::bracket_helper(TreeNode<K, V> *&rt, const K &access_key) {
+  if (rt == nullptr) {
+    rt = new TreeNode<K, V>(access_key, V());
+  } else if (access_key < rt->key) {
+    return bracket_helper(rt->left, access_key);
+  } else if (access_key > rt->key) {
+    return bracket_helper(rt->right, access_key);
+  }
+
+  return rt->value;
 }
 
 template <typename K, typename V>
 TreeNode<K, V> *MyMap<K, V>::find_helper(TreeNode<K, V> *rt,
                                          const K &search_key) const {
+  if (rt == nullptr || rt->key == search_key) {
+    return rt;
+  }
+
+  if (search_key < rt->key) {
+    return find_helper(rt->left, search_key);
+  } else {
+    return find_helper(rt->right, search_key);
+  }
 }
 
 template <typename K, typename V>
 TreeNode<K, V> *MyMap<K, V>::clone(const TreeNode<K, V> *rt) {
-}
+  if (rt == nullptr) {
+    return nullptr;
+  }
 
+  return new TreeNode<K, V>(rt->key, rt->value, clone(rt->left),
+                            clone(rt->right));
+}
 
 template <typename K, typename V>
 MyMap<K, V>::MyMap(const MyMap<K, V> &source) {
+  root = clone(source.root);
 }
 
 template <typename K, typename V>
 MyMap<K, V> &MyMap<K, V>::operator=(const MyMap<K, V> &source) {
+  if (this != &source) {
+    clear();
+    root = clone(source.root);
+  }
+  return *this;
 }
-
 
 /// Do not touch below ///
 
@@ -105,7 +184,7 @@ void MyMap<K, V>::convert_to_sorted_list(TreeNode<K, V> *&rt,
   convert_to_sorted_list(rt->right, sorted);
 }
 
-template <typename K, typename V> 
+template <typename K, typename V>
 void MyMap<K, V>::print_helper(TreeNode<K, V> *rt, std::string indent) const {
   if (rt == nullptr) {
     cout << indent << "   [empty]" << endl;
